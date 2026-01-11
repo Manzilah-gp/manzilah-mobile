@@ -1,3 +1,7 @@
+   // Manzilah Mobile Theme Configuration
+   // edit
+   //edit 
+
 export const theme = {
   colors: {
     primary: '#1e3c72',
@@ -48,6 +52,7 @@ export const theme = {
       shadowOpacity: 0.1,
       shadowRadius: 4,
       elevation: 2,
+
     },
     medium: {
       shadowColor: '#000',
