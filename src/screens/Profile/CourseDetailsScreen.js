@@ -1,5 +1,5 @@
-// FULLY FIXED Course Details Screen - Proper capacity and enrollment
-// Handles eligibility, capacity, and enrollment correctly
+// FINAL FIXED Course Details - Matches Backend Field Names Exactly
+// Backend uses: max_students, enrolled_count (not capacity, current_enrollment)
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -25,34 +25,34 @@ const CourseDetailsScreen = ({ route }) => {
   const [eligibility, setEligibility] = useState(null);
   const [checkingEligibility, setCheckingEligibility] = useState(false);
 
-  // Load course details on mount
   useEffect(() => {
     loadCourseDetails();
     checkEligibility();
   }, []);
 
-  // Fetch course details from API
+  // Fetch course details
   const loadCourseDetails = async () => {
     try {
       setLoading(true);
       const response = await apiClient.get(`/api/public/courses/${courseId}`);
       
-      console.log('Course details response:', response.data);
+      console.log('📚 Full API response:', response.data);
       
-      // Handle both response structures
-      const courseData = response.data.data || response.data;
+      const courseData = response.data.data;
       setCourse(courseData);
       
-      console.log('Course loaded:', {
+      // ⭐ Log the actual field names backend returns
+      console.log('✅ Course loaded with fields:', {
         name: courseData.name,
-        capacity: courseData.capacity,
-        current_enrollment: courseData.current_enrollment,
-        price: courseData.price_cents
+        max_students: courseData.max_students,        // ← Backend uses this
+        enrolled_count: courseData.enrolled_count,    // ← Backend uses this
+        capacity: courseData.capacity,                // ← Check if exists
+        current_enrollment: courseData.current_enrollment, // ← Check if exists
+        price_cents: courseData.price_cents
       });
       
     } catch (error) {
-      console.error('Error loading course details:', error);
-      console.error('Error response:', error.response?.data);
+      console.error('❌ Error loading course:', error);
       Alert.alert('Error', 'Failed to load course details');
       navigation.goBack();
     } finally {
@@ -60,7 +60,7 @@ const CourseDetailsScreen = ({ route }) => {
     }
   };
 
-  // Check if student can enroll
+  // Check eligibility
   const checkEligibility = async () => {
     try {
       setCheckingEligibility(true);
@@ -68,22 +68,12 @@ const CourseDetailsScreen = ({ route }) => {
         courseId: courseId
       });
       
-      console.log('Eligibility response:', response.data);
-      
-      // Handle both response structures
-      const eligData = response.data.data || response.data;
-      setEligibility(eligData);
+      console.log('✅ Eligibility:', response.data);
+      setEligibility(response.data.data || response.data);
       
     } catch (error) {
-      console.error('Eligibility check error:', error);
-      console.error('Error response:', error.response?.data);
-      
-      // If eligibility check fails, assume can enroll
-      setEligibility({
-        eligible: true,
-        success: true,
-        message: 'Ready to enroll'
-      });
+      console.error('❌ Eligibility error:', error);
+      setEligibility({ eligible: true, success: true });
     } finally {
       setCheckingEligibility(false);
     }
@@ -91,55 +81,50 @@ const CourseDetailsScreen = ({ route }) => {
 
   // Handle enrollment
   const handleEnroll = async () => {
-    // Check capacity first
-    const capacity = course.capacity || 999999; // If null/undefined, treat as unlimited
-    const currentEnrollment = course.current_enrollment || 0;
+    // ⭐ Use correct field names from backend
+    const capacity = course.max_students;           // Backend field name
+    const currentEnrollment = course.enrolled_count || 0;  // Backend field name
     
-    console.log('Checking capacity:', {
-      capacity,
-      currentEnrollment,
-      isFull: currentEnrollment >= capacity
+    console.log('🔍 Checking capacity:', {
+      max_students: capacity,
+      enrolled_count: currentEnrollment,
+      isFull: capacity && currentEnrollment >= capacity
     });
     
-    if (capacity !== 999999 && currentEnrollment >= capacity) {
+    if (capacity && currentEnrollment >= capacity) {
       Alert.alert('Course Full', 'This course has reached maximum capacity');
       return;
     }
 
-    // Check eligibility
     if (eligibility && eligibility.eligible === false) {
-      Alert.alert('Cannot Enroll', eligibility.message || 'You cannot enroll in this course');
+      Alert.alert('Cannot Enroll', eligibility.message || 'Cannot enroll in this course');
       return;
     }
 
-    // Confirm enrollment
     Alert.alert(
       'Confirm Enrollment',
       `Do you want to enroll in "${course.name}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Enroll',
-          onPress: () => processEnrollment()
-        }
+        { text: 'Enroll', onPress: () => processEnrollment() }
       ]
     );
   };
 
-  // Process the actual enrollment
+  // Process enrollment
   const processEnrollment = async () => {
     try {
       setEnrolling(true);
 
       if (course.price_cents === 0) {
-        // Free course enrollment
-        console.log('Enrolling in free course:', courseId);
+        // FREE COURSE
+        console.log('💚 Enrolling in FREE course');
         
         const response = await apiClient.post('/api/enrollment/enroll-free', {
           courseId: courseId
         });
 
-        console.log('Enrollment response:', response.data);
+        console.log('✅ Enrolled:', response.data);
 
         Alert.alert(
           'Success! 🎉',
@@ -149,48 +134,53 @@ const CourseDetailsScreen = ({ route }) => {
               text: 'View My Enrollments',
               onPress: () => navigation.navigate('MyEnrollments')
             },
-            {
-              text: 'OK',
-              style: 'cancel'
-            }
+            { text: 'OK', style: 'cancel' }
           ]
         );
+        
       } else {
-        // Paid course - redirect to Stripe
-        console.log('Creating payment session for course:', courseId);
+        // PAID COURSE - Stripe
+        console.log('💳 Creating Stripe session');
         
         const response = await apiClient.post('/api/enrollment/enroll-paid', {
           courseId: courseId
         });
 
-        console.log('Payment session response:', response.data);
+        console.log('✅ Stripe response:', response.data);
 
-        if (response.data.sessionUrl) {
-          // Navigate to payment screen with Stripe URL
-          navigation.navigate('Payment', {
-            sessionUrl: response.data.sessionUrl,
-            sessionId: response.data.sessionId,
-            courseId: courseId,
-            courseName: course.name
-          });
-        } else {
+        // Extract URL and sessionId
+        const stripeUrl = response.data.data?.url || response.data.url;
+        const sessionId = response.data.data?.sessionId || response.data.sessionId;
+
+        console.log('🔗 Stripe URL:', stripeUrl);
+        console.log('🆔 Session ID:', sessionId);
+
+        if (!stripeUrl) {
           throw new Error('No payment URL received');
         }
+
+        // Navigate to Payment screen
+        navigation.navigate('Payment', {
+          sessionUrl: stripeUrl,
+          sessionId: sessionId,
+          courseId: courseId,
+          courseName: course.name
+        });
       }
     } catch (error) {
-      console.error('Enrollment error:', error);
+      console.error('❌ Enrollment error:', error);
       console.error('Error response:', error.response?.data);
       
       Alert.alert(
         'Enrollment Failed',
-        error.response?.data?.message || error.message || 'Failed to enroll in course'
+        error.response?.data?.message || error.message || 'Failed to enroll'
       );
     } finally {
       setEnrolling(false);
     }
   };
 
-  // Get enrollment button state
+  // Get button state
   const getEnrollmentButton = () => {
     if (enrolling) {
       return {
@@ -210,10 +200,10 @@ const CourseDetailsScreen = ({ route }) => {
       };
     }
 
-    // Check if course is full
-    const capacity = course.capacity || 999999;
-    const currentEnrollment = course.current_enrollment || 0;
-    const isFull = capacity !== 999999 && currentEnrollment >= capacity;
+    // ⭐ Use correct field names
+    const capacity = course.max_students;
+    const currentEnrollment = course.enrolled_count || 0;
+    const isFull = capacity && currentEnrollment >= capacity;
     
     if (isFull) {
       return {
@@ -224,7 +214,6 @@ const CourseDetailsScreen = ({ route }) => {
       };
     }
 
-    // Check eligibility (only block if explicitly not eligible)
     if (eligibility && eligibility.eligible === false) {
       return {
         text: eligibility.message || 'Cannot Enroll',
@@ -234,7 +223,6 @@ const CourseDetailsScreen = ({ route }) => {
       };
     }
 
-    // Can enroll
     if (course.price_cents === 0) {
       return {
         text: 'Enroll for FREE',
@@ -254,7 +242,6 @@ const CourseDetailsScreen = ({ route }) => {
     };
   };
 
-  // Show loading indicator
   if (loading) {
     return (
       <MainLayout title="Course Details">
@@ -277,15 +264,16 @@ const CourseDetailsScreen = ({ route }) => {
 
   const enrollButton = getEnrollmentButton();
   
-  // Calculate capacity display
-  const capacity = course.capacity || '∞';
-  const currentEnrollment = course.current_enrollment || 0;
-  const isFull = capacity !== '∞' && currentEnrollment >= capacity;
+  // ⭐ Use correct field names for display
+  const capacity = course.max_students;
+  const currentEnrollment = course.enrolled_count || 0;
+  const capacityText = capacity ? `${currentEnrollment}/${capacity}` : `${currentEnrollment}/∞`;
+  const isFull = capacity && currentEnrollment >= capacity;
 
   return (
     <MainLayout title={course.name}>
       <ScrollView style={styles.container}>
-        {/* Course Header Card */}
+        {/* Header */}
         <View style={styles.headerCard}>
           <View style={styles.courseIconLarge}>
             <MaterialCommunityIcons 
@@ -297,7 +285,6 @@ const CourseDetailsScreen = ({ route }) => {
           
           <Text style={styles.courseName}>{course.name}</Text>
 
-          {/* Price Badge */}
           <View style={[
             styles.priceBadgeLarge,
             { backgroundColor: course.price_cents === 0 ? theme.colors.success : theme.colors.primary }
@@ -308,7 +295,7 @@ const CourseDetailsScreen = ({ route }) => {
           </View>
         </View>
 
-        {/* Course Info */}
+        {/* Info */}
         <View style={styles.infoSection}>
           <Text style={styles.sectionTitle}>Course Information</Text>
 
@@ -325,12 +312,12 @@ const CourseDetailsScreen = ({ route }) => {
             </View>
           </View>
 
-          {/* Course Type */}
+          {/* Type */}
           <View style={styles.infoRow}>
             <MaterialCommunityIcons name="tag" size={20} color={theme.colors.primary} />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Course Type</Text>
-              <Text style={styles.infoValue}>{course.course_type_name || course.course_type}</Text>
+              <Text style={styles.infoValue}>{course.course_type || 'General Course'}</Text>
             </View>
           </View>
 
@@ -369,14 +356,13 @@ const CourseDetailsScreen = ({ route }) => {
             </View>
           )}
 
-          {/* Capacity - FIXED */}
+          {/* Capacity - FIXED with correct field names */}
           <View style={styles.infoRow}>
             <MaterialCommunityIcons name="account-group" size={20} color={theme.colors.primary} />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Enrollment</Text>
               <Text style={[styles.infoValue, isFull && { color: theme.colors.error }]}>
-                {currentEnrollment}/{capacity} students
-                {isFull && ' (Full)'}
+                {capacityText} students {isFull && '(Full)'}
               </Text>
             </View>
           </View>
@@ -408,7 +394,7 @@ const CourseDetailsScreen = ({ route }) => {
           </View>
         )}
 
-        {/* Eligibility Warning - Only show if explicitly not eligible */}
+        {/* Warning */}
         {eligibility && eligibility.eligible === false && eligibility.message && (
           <View style={styles.warningBox}>
             <MaterialCommunityIcons name="alert-circle" size={24} color={theme.colors.warning} />

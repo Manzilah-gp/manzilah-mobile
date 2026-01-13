@@ -63,6 +63,7 @@ const MainStack = () => (
     <Stack.Screen name="MosqueDetails" component={MosqueDetailsScreen} />
     <Stack.Screen name="BrowseCourses" component={BrowseCoursesScreen} />
     <Stack.Screen name="CourseDetails" component={CourseDetailsScreen} />
+    <Stack.Screen name="Payment" component={PaymentScreen} />
 
 
 

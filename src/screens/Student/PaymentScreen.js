@@ -1,13 +1,13 @@
-// Payment Screen - Handles Stripe payment for paid courses
-// Shows Stripe checkout in WebView and verifies payment
-import React, { useState, useEffect } from 'react';
+// Payment Screen - Handles Stripe Checkout with proper verification
+// Detects success URL and calls backend to verify payment and enroll student
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
+  TouchableOpacity,
   ActivityIndicator,
   Alert,
-  TouchableOpacity,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -19,97 +19,148 @@ import { theme } from '../../styles/theme';
 const PaymentScreen = ({ route }) => {
   const { sessionUrl, sessionId, courseId, courseName } = route.params;
   const navigation = useNavigation();
-  const [loading, setLoading] = useState(false);
-  const [verifying, setVerifying] = useState(false);
+  const webViewRef = useRef(null);
+  
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState('');
 
   // Handle WebView navigation state changes
   const handleNavigationStateChange = async (navState) => {
     const { url } = navState;
+    setCurrentUrl(url);
     
-    console.log('WebView URL:', url);
+    console.log('🌐 WebView URL:', url);
 
-    // Check if payment was successful (Stripe redirects to success URL)
-    if (url.includes('/payment-success') || url.includes('success=true')) {
-      setVerifying(true);
-      await verifyPayment();
+    // ✅ Check if payment was successful
+    if (url.includes('/payment/success')) {
+      console.log('✅ Payment SUCCESS detected!');
+      
+      // Extract session_id from URL
+      const urlParams = new URLSearchParams(url.split('?')[1]);
+      const returnedSessionId = urlParams.get('session_id');
+      
+      console.log('🆔 Session ID from URL:', returnedSessionId);
+      console.log('🆔 Original Session ID:', sessionId);
+      
+      // Verify payment and enroll
+      await handlePaymentSuccess(returnedSessionId || sessionId);
+      return;
     }
 
-    // Check if payment was cancelled
-    if (url.includes('/payment-cancel') || url.includes('cancelled=true')) {
-      Alert.alert(
-        'Payment Cancelled',
-        'You cancelled the payment. You can try again anytime.',
-        [
-          {
-            text: 'Go Back',
-            onPress: () => navigation.goBack()
-          }
-        ]
-      );
+    // ❌ Check if payment was cancelled
+    if (url.includes('payment=cancelled')) {
+      console.log('❌ Payment CANCELLED detected');
+      handlePaymentCancel();
+      return;
     }
   };
 
-  // Verify payment with backend
-  const verifyPayment = async () => {
+  // Verify payment with backend and complete enrollment
+  const handlePaymentSuccess = async (verifySessionId) => {
     try {
-      const response = await apiClient.get(`/api/enrollment/verify-payment/${sessionId}`);
+      setProcessing(true);
+      console.log('🔍 Verifying payment with backend...');
+      console.log('Session ID:', verifySessionId);
+
+      // Call backend to complete enrollment after payment
+      // ⭐ This endpoint: verifies payment, saves to PAYMENT table, enrolls student
+      const response = await apiClient.post('/api/enrollment/complete-payment', {
+        sessionId: verifySessionId
+      });
       
+      console.log('✅ Verification response:', response.data);
+
       if (response.data.success) {
+        // Payment verified and student enrolled!
         Alert.alert(
           'Payment Successful! 🎉',
-          `You have been enrolled in "${courseName}"`,
+          `You have been enrolled in ${courseName}`,
           [
             {
               text: 'View My Enrollments',
               onPress: () => {
-                // Navigate to enrollments and reset navigation stack
                 navigation.reset({
-                  index: 1,
+                  index: 0,
                   routes: [
                     { name: 'Home' },
                     { name: 'MyEnrollments' }
-                  ]
+                  ],
                 });
               }
             }
-          ]
+          ],
+          { cancelable: false }
         );
       } else {
-        throw new Error('Payment verification failed');
+        throw new Error(response.data.message || 'Verification failed');
       }
+
     } catch (error) {
-      console.error('Payment verification error:', error);
+      console.error('❌ Payment verification error:', error);
+      console.error('Error response:', error.response?.data);
+      
       Alert.alert(
-        'Verification Error',
-        'Payment may have succeeded but verification failed. Please contact support.',
+        'Enrollment Error',
+        'Payment was successful but enrollment failed. Please contact support.',
         [
           {
-            text: 'Go to My Enrollments',
-            onPress: () => navigation.navigate('MyEnrollments')
+            text: 'Contact Support',
+            onPress: () => navigation.goBack()
           },
           {
-            text: 'OK',
-            style: 'cancel'
+            text: 'Try Again',
+            onPress: () => handlePaymentSuccess(verifySessionId)
           }
         ]
       );
     } finally {
-      setVerifying(false);
+      setProcessing(false);
     }
   };
 
+  // Handle payment cancellation
+  const handlePaymentCancel = () => {
+    Alert.alert(
+      'Payment Cancelled',
+      'You have cancelled the payment process.',
+      [
+        {
+          text: 'Try Again',
+          onPress: () => webViewRef.current?.reload()
+        },
+        {
+          text: 'Go Back',
+          onPress: () => navigation.goBack(),
+          style: 'cancel'
+        }
+      ]
+    );
+  };
+
   // Handle WebView errors
-  const handleError = (syntheticEvent) => {
+  const handleWebViewError = (syntheticEvent) => {
     const { nativeEvent } = syntheticEvent;
-    console.error('WebView error:', nativeEvent);
+    console.error('❌ WebView error:', nativeEvent);
     
+    // Don't show error if we're processing a successful payment
+    if (processing) {
+      return;
+    }
+
+    // Don't show error for localhost URLs (they're expected to fail)
+    if (nativeEvent.url && nativeEvent.url.includes('localhost')) {
+      console.log('ℹ️ Localhost URL detected, this is expected');
+      return;
+    }
+
     Alert.alert(
       'Loading Error',
       'Failed to load payment page. Please check your internet connection.',
       [
         {
           text: 'Retry',
-          onPress: () => setLoading(true)
+          onPress: () => webViewRef.current?.reload()
         },
         {
           text: 'Cancel',
@@ -120,65 +171,74 @@ const PaymentScreen = ({ route }) => {
     );
   };
 
-  // Show verifying screen
-  if (verifying) {
+  // Handle manual cancel
+  const handleManualCancel = () => {
+    Alert.alert(
+      'Cancel Payment?',
+      'Are you sure you want to cancel this payment?',
+      [
+        {
+          text: 'No, Continue',
+          style: 'cancel'
+        },
+        {
+          text: 'Yes, Cancel',
+          onPress: () => navigation.goBack(),
+          style: 'destructive'
+        }
+      ]
+    );
+  };
+
+  // Show processing overlay
+  if (processing) {
     return (
-      <MainLayout title="Payment">
-        <View style={styles.verifyingContainer}>
+      <MainLayout title="Processing Payment">
+        <View style={styles.processingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.verifyingText}>Verifying payment...</Text>
-          <Text style={styles.verifyingSubtext}>Please wait while we confirm your enrollment</Text>
+          <Text style={styles.processingText}>Verifying payment...</Text>
+          <Text style={styles.processingSubtext}>Please wait</Text>
         </View>
       </MainLayout>
     );
   }
 
   return (
-    <MainLayout title="Complete Payment">
+    <MainLayout title="Secure Payment">
       <View style={styles.container}>
-        {/* Header Info */}
+        {/* Header with security badge */}
         <View style={styles.header}>
-          <MaterialCommunityIcons name="lock" size={24} color={theme.colors.success} />
+          <MaterialCommunityIcons name="shield-check" size={24} color={theme.colors.success} />
           <Text style={styles.headerText}>Secure Payment via Stripe</Text>
         </View>
 
         {/* WebView for Stripe Checkout */}
         <WebView
+          ref={webViewRef}
           source={{ uri: sessionUrl }}
           onNavigationStateChange={handleNavigationStateChange}
-          onError={handleError}
           onLoadStart={() => setLoading(true)}
           onLoadEnd={() => setLoading(false)}
+          onError={handleWebViewError}
           startInLoadingState={true}
           renderLoading={() => (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={theme.colors.primary} />
-              <Text style={styles.loadingText}>Loading payment page...</Text>
+              <Text style={styles.loadingText}>Loading secure payment...</Text>
             </View>
           )}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
           style={styles.webview}
         />
 
-        {/* Cancel Button */}
+        {/* Cancel button */}
         <TouchableOpacity
           style={styles.cancelButton}
-          onPress={() => {
-            Alert.alert(
-              'Cancel Payment',
-              'Are you sure you want to cancel this payment?',
-              [
-                { text: 'No', style: 'cancel' },
-                {
-                  text: 'Yes, Cancel',
-                  style: 'destructive',
-                  onPress: () => navigation.goBack()
-                }
-              ]
-            );
-          }}
+          onPress={handleManualCancel}
           activeOpacity={0.7}
         >
-          <MaterialCommunityIcons name="close" size={20} color={theme.colors.white} />
+          <MaterialCommunityIcons name="close" size={20} color={theme.colors.error} />
           <Text style={styles.cancelButtonText}>Cancel Payment</Text>
         </TouchableOpacity>
       </View>
@@ -194,9 +254,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: theme.colors.white,
-    paddingVertical: theme.spacing.md,
+    padding: theme.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
@@ -215,45 +274,46 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    backgroundColor: theme.colors.white,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.white,
   },
   loadingText: {
     fontSize: theme.fontSize.md,
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.md,
   },
-  verifyingContainer: {
+  processingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: theme.spacing.xl,
+    backgroundColor: theme.colors.white,
   },
-  verifyingText: {
+  processingText: {
     fontSize: theme.fontSize.lg,
     fontWeight: '600',
     color: theme.colors.text,
     marginTop: theme.spacing.lg,
   },
-  verifyingSubtext: {
-    fontSize: theme.fontSize.sm,
+  processingSubtext: {
+    fontSize: theme.fontSize.md,
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.sm,
-    textAlign: 'center',
   },
   cancelButton: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.error,
-    paddingVertical: theme.spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: theme.colors.white,
+    paddingVertical: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
   cancelButtonText: {
     fontSize: theme.fontSize.md,
-    fontWeight: '600',
-    color: theme.colors.white,
+    color: theme.colors.error,
     marginLeft: theme.spacing.sm,
+    fontWeight: '500',
   },
 });
 

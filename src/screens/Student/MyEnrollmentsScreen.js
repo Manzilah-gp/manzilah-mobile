@@ -1,5 +1,5 @@
-// FIXED My Enrollments Screen - Corrected progress calculation variable
-// Shows all student enrollments with proper progress display
+// FINAL FIXED My Enrollments Screen - Matches Backend Response
+// Backend returns: id, status, enrollment_date, course_id, course_name, course_type, mosque_name, completion_percentage
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -23,7 +23,6 @@ const MyEnrollmentsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [enrollments, setEnrollments] = useState([]);
-  const [statistics, setStatistics] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -32,7 +31,7 @@ const MyEnrollmentsScreen = () => {
     loadData();
   }, [statusFilter]);
 
-  // Fetch enrollments and statistics from API
+  // Fetch enrollments from API
   const loadData = async () => {
     try {
       setLoading(true);
@@ -45,18 +44,17 @@ const MyEnrollmentsScreen = () => {
         params.search = searchQuery.trim();
       }
       
-      const [enrollmentsResponse, statsResponse] = await Promise.all([
-        apiClient.get('/api/enrollment/my-enrollments', { params }),
-        apiClient.get('/api/student/stats')
-      ]);
+      const response = await apiClient.get('/api/enrollment/my-enrollments', { params });
       
-      setEnrollments(enrollmentsResponse.data.data || []);
-      setStatistics(statsResponse.data.data || {});
+      console.log('📚 My Enrollments API response:', response.data);
       
-      console.log('Enrollments loaded:', enrollmentsResponse.data.data?.length || 0);
+      const enrollmentsData = response.data.data || [];
+      setEnrollments(enrollmentsData);
+      
+      console.log(`✅ Loaded ${enrollmentsData.length} enrollments`);
       
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('❌ Error loading enrollments:', error);
       Alert.alert('Error', 'Failed to load enrollments');
     } finally {
       setLoading(false);
@@ -73,7 +71,7 @@ const MyEnrollmentsScreen = () => {
     loadData();
   };
 
-  // Get progress color based on percentage
+  // Get progress color
   const getProgressColor = (progress) => {
     if (progress >= 75) return theme.colors.success;
     if (progress >= 50) return theme.colors.warning;
@@ -93,29 +91,6 @@ const MyEnrollmentsScreen = () => {
         return theme.colors.gray;
     }
   };
-
-  // Render statistics cards at the top
-  const renderStatistics = () => (
-    <View style={styles.statsContainer}>
-      <View style={styles.statCard}>
-        <MaterialCommunityIcons name="book-multiple" size={24} color={theme.colors.primary} />
-        <Text style={styles.statValue}>{statistics.activeCourses || 0}</Text>
-        <Text style={styles.statLabel}>Active</Text>
-      </View>
-      <View style={styles.statCard}>
-        <MaterialCommunityIcons name="chart-line" size={24} color={theme.colors.success} />
-        <Text style={styles.statValue}>{Math.round(statistics.avgProgress || 0)}%</Text>
-        <Text style={styles.statLabel}>Avg Progress</Text>
-      </View>
-      <View style={styles.statCard}>
-        <MaterialCommunityIcons name="calendar-check" size={24} color={theme.colors.warning} />
-        <Text style={styles.statValue}>
-          {statistics.attendanceRate ? Math.round(statistics.attendanceRate) : 0}%
-        </Text>
-        <Text style={styles.statLabel}>Attendance</Text>
-      </View>
-    </View>
-  );
 
   // Render search bar
   const renderSearchBar = () => (
@@ -163,31 +138,20 @@ const MyEnrollmentsScreen = () => {
 
   // Render single enrollment card
   const renderEnrollment = ({ item }) => {
-    const isMemorization = item.course_type_name === 'memorization' || item.course_type === 'memorization';
-    
-    // ✅ FIXED: Calculate progress - changed variable name from correctProgress to progress
-    let progress = 0;
-    if (isMemorization) {
-      // For memorization: use completion_percentage or progress field
-      progress = Math.round(item.completion_percentage || item.progress || 0);
-    }else {
-                // For other courses: calculate from attendance
-                const present = parseInt(item.present_count) || 0;
-                const total = parseInt(item.total_attendance_records) || 0;
-                progress = total > 0 ? Math.round((present / total) * 100) : 0;
-            }
+    // ⭐ Backend returns: completion_percentage directly
+    const progress = Math.round(item.completion_percentage || 0);
     
     return (
       <TouchableOpacity
         style={styles.enrollmentCard}
-        onPress={() => navigation.navigate('EnrollmentDetails', { enrollmentId: item.enrollment_id || item.id })}
+        onPress={() => navigation.navigate('EnrollmentDetails', { enrollmentId: item.id })}
         activeOpacity={0.7}
       >
         {/* Course Header */}
         <View style={styles.enrollmentHeader}>
           <View style={styles.courseIconContainer}>
             <MaterialCommunityIcons 
-              name={isMemorization ? 'book-open-variant' : 'book-open'} 
+              name={item.course_type === 'memorization' ? 'book-open-variant' : 'book-open'} 
               size={28} 
               color={theme.colors.primary} 
             />
@@ -196,7 +160,7 @@ const MyEnrollmentsScreen = () => {
             <Text style={styles.courseName}>{item.course_name}</Text>
             <View style={styles.courseMetaRow}>
               <MaterialCommunityIcons name="tag" size={14} color={theme.colors.textSecondary} />
-              <Text style={styles.courseType}>{item.course_type_name || item.course_type}</Text>
+              <Text style={styles.courseType}>{item.course_type}</Text>
             </View>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
@@ -212,15 +176,7 @@ const MyEnrollmentsScreen = () => {
           </View>
         )}
 
-        {/* Teacher Info */}
-        {item.teacher_name && (
-          <View style={styles.teacherRow}>
-            <MaterialCommunityIcons name="account-tie" size={16} color={theme.colors.textSecondary} />
-            <Text style={styles.teacherText}>{item.teacher_name}</Text>
-          </View>
-        )}
-
-        {/* Progress Section - ✅ Now using 'progress' variable correctly */}
+        {/* Progress Section */}
         {item.status === 'active' && (
           <View style={styles.progressSection}>
             <View style={styles.progressHeader}>
@@ -240,19 +196,20 @@ const MyEnrollmentsScreen = () => {
                 ]} 
               />
             </View>
-            
-            {/* Show additional info based on course type */}
-            {isMemorization && item.current_page && (
-              <Text style={styles.additionalInfo}>
-                Page {item.current_page} of {item.level_end_page || '—'}
+          </View>
+        )}
+
+        {/* Course Duration */}
+        {(item.course_start_date || item.course_end_date) && (
+          <View style={styles.detailsRow}>
+            <View style={styles.detailItem}>
+              <MaterialCommunityIcons name="calendar-range" size={16} color={theme.colors.textSecondary} />
+              <Text style={styles.detailText}>
+                {item.course_start_date && new Date(item.course_start_date).toLocaleDateString()}
+                {item.course_start_date && item.course_end_date && ' - '}
+                {item.course_end_date && new Date(item.course_end_date).toLocaleDateString()}
               </Text>
-            )}
-            
-            {!isMemorization && item.total_attendance_records > 0 && (
-              <Text style={styles.additionalInfo}>
-                Attended: {item.present_count || 0}/{item.total_attendance_records} sessions
-              </Text>
-            )}
+            </View>
           </View>
         )}
 
@@ -300,14 +257,13 @@ const MyEnrollmentsScreen = () => {
   return (
     <MainLayout title="My Enrollments">
       <View style={styles.container}>
-        {renderStatistics()}
         {renderSearchBar()}
         {renderStatusFilters()}
 
         <FlatList
           data={enrollments}
           renderItem={renderEnrollment}
-          keyExtractor={(item, index) => `enrollment-${item.enrollment_id || item.id || index}`}
+          keyExtractor={(item, index) => `enrollment-${item.id || index}`}
           contentContainerStyle={styles.listContainer}
           ListEmptyComponent={renderEmptyState}
           refreshControl={
@@ -329,32 +285,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.white,
-    marginBottom: theme.spacing.sm,
-  },
-  statCard: {
-    flex: 1,
-    alignItems: 'center',
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.lightGray,
-    borderRadius: theme.borderRadius.md,
-    marginHorizontal: 4,
-  },
-  statValue: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
-    marginVertical: 4,
-  },
-  statLabel: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -362,7 +292,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
+    marginVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -453,19 +383,9 @@ const styles = StyleSheet.create({
   mosqueRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.xs,
-  },
-  mosqueText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    marginLeft: 4,
-  },
-  teacherRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: theme.spacing.sm,
   },
-  teacherText: {
+  mosqueText: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     marginLeft: 4,
@@ -496,17 +416,13 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 4,
   },
-  additionalInfo: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
-    marginTop: 4,
-  },
   detailsRow: {
     marginTop: theme.spacing.sm,
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: theme.spacing.xs,
   },
   detailText: {
     fontSize: theme.fontSize.sm,
@@ -539,4 +455,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MyEnrollmentsScreen;
+export default MyEnrollmentsScreen; 
