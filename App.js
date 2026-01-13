@@ -38,6 +38,9 @@ import MosqueDetailsScreen from './src/screens/Profile/MosqueDetailsScreen';
 import BrowseCoursesScreen from './src/screens/Student/BrowseCoursesScreen';
 import CourseDetailsScreen from './src/screens/Profile/CourseDetailsScreen';
 
+import PrayerTimesScreen from './src/screens/Islamic/PrayerTimesScreen';
+import QiblaCompassScreen from './src/screens/Islamic/QiblaCompassScreen';
+import HijriCalendarScreen from './src/screens/Islamic/HijriCalendarScreen';
 const Stack = createStackNavigator();
 
 // Auth Stack
@@ -64,6 +67,10 @@ const MainStack = () => (
     <Stack.Screen name="BrowseCourses" component={BrowseCoursesScreen} />
     <Stack.Screen name="CourseDetails" component={CourseDetailsScreen} />
     <Stack.Screen name="Payment" component={PaymentScreen} />
+
+    <Stack.Screen name="PrayerTimes" component={PrayerTimesScreen} />
+    <Stack.Screen name="QiblaCompass" component={QiblaCompassScreen} />
+    <Stack.Screen name="HijriCalendar" component={HijriCalendarScreen} />
 
 
 
