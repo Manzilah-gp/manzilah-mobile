@@ -88,6 +88,18 @@ const Sidebar = ({ user, onClose }) => {
         screen: 'Events',
         roles: ['ministry_admin', 'mosque_admin', 'teacher', 'student', 'parent']
       },
+       {
+    name: 'Browse Mosques',
+    icon: 'mosque',
+    screen: 'BrowseMosques',
+    title:'Mosques',
+  },
+   {
+    name: 'Browse Courses',
+    icon: 'book-open',
+    screen: 'BrowseCourses',
+    title:'Courses'
+  },
 
       // ==================== MINISTRY ADMIN ONLY ====================
       {
