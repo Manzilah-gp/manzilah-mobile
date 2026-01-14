@@ -103,6 +103,30 @@ const HomeScreen = () => {
               />
             </TouchableOpacity>
           </View>
+         {/* Quran Mushaf Button */}
+<TouchableOpacity
+  style={styles.islamicFeatureButton}
+  onPress={() => navigation.navigate('QuranMushaf')}
+  activeOpacity={0.7}
+>
+  <View style={styles.featureIconContainer}>
+    <Text style={styles.featureIcon}>📖</Text>
+  </View>
+
+  <View style={styles.featureTextContainer}>
+    <Text style={styles.featureTitle}>Quran Mushaf</Text>
+    <Text style={styles.featureDescription}>
+      Read the Holy Quran
+    </Text>
+  </View>
+
+  <MaterialCommunityIcons
+    name="chevron-right"
+    size={24}
+    color={theme.colors.textSecondary}
+  />
+</TouchableOpacity>
+
 
           {/* Quick Actions Section */}
           <View style={styles.sectionContainer}>

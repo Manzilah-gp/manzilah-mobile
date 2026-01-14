@@ -14,20 +14,41 @@
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.manzilah.mobile",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs your location to calculate accurate prayer times.",
-        "NSMotionUsageDescription": "This app needs access to the compass to show Qibla direction."
+        "NSMotionUsageDescription": "This app needs access to the compass to show Qibla direction.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSExceptionDomains": {
+            "everyayah.com": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            },
+            "tanzil.net": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            },
+            "quran.com": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
       }
     },
     "android": {
+      "package": "com.manzilah.mobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
+      "usesCleartextTraffic": true,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "INTERNET"
       ]
     },
     "web": {

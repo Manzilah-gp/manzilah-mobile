@@ -41,6 +41,8 @@ import CourseDetailsScreen from './src/screens/Profile/CourseDetailsScreen';
 import PrayerTimesScreen from './src/screens/Islamic/PrayerTimesScreen';
 import QiblaCompassScreen from './src/screens/Islamic/QiblaCompassScreen';
 import HijriCalendarScreen from './src/screens/Islamic/HijriCalendarScreen';
+import MushafScreen from './src/screens/Quran/MushafImageScreen';
+
 const Stack = createStackNavigator();
 
 // Auth Stack
@@ -71,6 +73,8 @@ const MainStack = () => (
     <Stack.Screen name="PrayerTimes" component={PrayerTimesScreen} />
     <Stack.Screen name="QiblaCompass" component={QiblaCompassScreen} />
     <Stack.Screen name="HijriCalendar" component={HijriCalendarScreen} />
+    <Stack.Screen name="QuranMushaf" component={MushafScreen}/>
+
 
 
 
