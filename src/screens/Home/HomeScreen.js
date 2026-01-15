@@ -127,7 +127,22 @@ const HomeScreen = () => {
   />
 </TouchableOpacity>
 
-
+{/* Tajweed  */}
+<TouchableOpacity
+  style={styles.featureCard}
+  onPress={() => navigation.navigate('TajweedRules')}
+>
+  <View style={styles.featureIcon}>
+    <Text style={styles.featureIconText}>📖</Text>
+  </View>
+  <View style={styles.featureContent}>
+    <Text style={styles.featureTitle}> Tajweed Training</Text>
+    <Text style={styles.featureDescription}>
+      Learn Quranic recitation rules with color-coded verses
+    </Text>
+  </View>
+  <Text style={styles.featureChevron}>›</Text>
+</TouchableOpacity>
           {/* Quick Actions Section */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>⚡ Quick Actions</Text>
@@ -290,6 +305,37 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: theme.spacing.md,
   },
+  featureCard: {
+  backgroundColor: '#FFFFFF',
+  borderRadius: 16,
+  padding: 16,
+  marginBottom: 12,
+  flexDirection: 'row',
+  alignItems: 'center',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3,
+},
+
+featureIconText: {
+  fontSize: 32,
+},
+featureContent: {
+  flex: 1,
+},
+
+featureSubtitle: {
+  fontSize: 12,
+  color: '#666',
+  marginBottom: 4,
+},
+
+featureChevron: {
+  fontSize: 24,
+  color: '#CCC',
+},
 });
 
 export default HomeScreen;
