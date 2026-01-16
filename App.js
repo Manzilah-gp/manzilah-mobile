@@ -44,6 +44,8 @@ import HijriCalendarScreen from './src/screens/Islamic/HijriCalendarScreen';
 import MushafScreen from './src/screens/Quran/MushafImageScreen';
 import TajweedRulesScreen from './src/screens/Tajweed/TajweedRulesScreen';
 import TajweedTrainingScreen from './src/screens/Tajweed/TajweedTrainingScreen';
+import ChatScreen from './src/screens/Chatscreen';
+
 const Stack = createStackNavigator();
 
 // Auth Stack
@@ -77,6 +79,7 @@ const MainStack = () => (
     <Stack.Screen name="QuranMushaf" component={MushafScreen}/>
     <Stack.Screen name="TajweedRules" component={TajweedRulesScreen} />
     <Stack.Screen name="TajweedTraining" component={TajweedTrainingScreen} />
+    <Stack.Screen name="Chat"  component={ChatScreen} options={{ headerShown: false }}/>
 
 
 
