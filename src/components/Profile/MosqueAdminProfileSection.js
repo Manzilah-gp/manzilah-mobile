@@ -81,14 +81,7 @@ const MosqueAdminProfileSection = ({ mosqueAdminData }) => {
 
       {/* Quick Action Buttons for mosque management */}
       <View style={styles.actionsContainer}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => navigation.navigate('MyMosque')}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons name="cog" size={20} color={theme.colors.white} />
-          <Text style={styles.actionButtonText}>Manage</Text>
-        </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => navigation.navigate('CourseList')}
@@ -97,45 +90,14 @@ const MosqueAdminProfileSection = ({ mosqueAdminData }) => {
           <MaterialCommunityIcons name="book-multiple" size={20} color={theme.colors.white} />
           <Text style={styles.actionButtonText}>Courses</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => navigation.navigate('TeachersManagement')}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons name="account-tie" size={20} color={theme.colors.white} />
-          <Text style={styles.actionButtonText}>Teachers</Text>
-        </TouchableOpacity>
+       
       </View>
 
       {/* Additional Management Options */}
       <View style={styles.managementSection}>
         <Text style={styles.subsectionTitle}>Management</Text>
-        
-        <TouchableOpacity
-          style={styles.managementCard}
-          onPress={() => navigation.navigate('Statistics')}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons name="chart-bar" size={32} color={theme.colors.primary} />
-          <View style={styles.managementInfo}>
-            <Text style={styles.managementTitle}>View Statistics</Text>
-            <Text style={styles.managementDesc}>Detailed mosque analytics</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.managementCard}
-          onPress={() => navigation.navigate('AddCourse')}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons name="plus-circle" size={32} color={theme.colors.success} />
-          <View style={styles.managementInfo}>
-            <Text style={styles.managementTitle}>Add New Course</Text>
-            <Text style={styles.managementDesc}>Create a new course</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
+      
+      
 
         <TouchableOpacity
           style={styles.managementCard}

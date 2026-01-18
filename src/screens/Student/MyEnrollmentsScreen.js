@@ -1,10 +1,8 @@
-// FINAL FIXED My Enrollments Screen - Matches Backend Response
-// Backend returns: id, status, enrollment_date, course_id, course_name, course_type, mosque_name, completion_percentage
+// MyEnrollmentsScreen.js - FIXED & MATCHES PROFILE LOGIC
 import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   TouchableOpacity,
   TextInput,
@@ -17,44 +15,36 @@ import { useNavigation } from '@react-navigation/native';
 import MainLayout from '../../components/Layout/MainLayout';
 import apiClient from '../../api/client';
 import { theme } from '../../styles/theme';
+import { StyleSheet } from 'react-native';
 
 const MyEnrollmentsScreen = () => {
   const navigation = useNavigation();
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [enrollments, setEnrollments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Load enrollments on mount and when filter changes
   useEffect(() => {
     loadData();
   }, [statusFilter]);
 
-  // Fetch enrollments from API
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       const params = {};
-      if (statusFilter !== 'all') {
-        params.status = statusFilter;
-      }
-      if (searchQuery.trim()) {
-        params.search = searchQuery.trim();
-      }
-      
-      const response = await apiClient.get('/api/enrollment/my-enrollments', { params });
-      
-      console.log('📚 My Enrollments API response:', response.data);
-      
-      const enrollmentsData = response.data.data || [];
-      setEnrollments(enrollmentsData);
-      
-      console.log(`✅ Loaded ${enrollmentsData.length} enrollments`);
-      
+      if (statusFilter !== 'all') params.status = statusFilter;
+      if (searchQuery.trim()) params.search = searchQuery.trim();
+
+      const response = await apiClient.get('/api/enrollment/my-enrollments', {
+        params,
+      });
+
+      setEnrollments(response.data.data || []);
     } catch (error) {
-      console.error('❌ Error loading enrollments:', error);
+      console.error(error);
       Alert.alert('Error', 'Failed to load enrollments');
     } finally {
       setLoading(false);
@@ -67,18 +57,59 @@ const MyEnrollmentsScreen = () => {
     setRefreshing(false);
   };
 
-  const handleSearch = () => {
-    loadData();
-  };
+  /* ===============================
+     ✅ SAME LOGIC AS PROFILE SCREEN
+     =============================== */
+  const calculateProgress = (enrollment) => {
+  const courseType = (
+    enrollment.course_type ||
+    enrollment.course_type_name ||
+    ''
+  ).toLowerCase();
 
-  // Get progress color
+  const isMemorization = courseType === 'memorization';
+
+  // ✅ Memorization → completion_percentage فقط
+  if (isMemorization) {
+    return Math.round(enrollment.completion_percentage || 0);
+  }
+
+  // ✅ 1. attendance_rate (جاهزة من backend)
+  if (typeof enrollment.attendance_rate === 'number') {
+    return Math.round(enrollment.attendance_rate);
+  }
+
+  // ✅ 2. attendance_percentage
+  if (typeof enrollment.attendance_percentage === 'number') {
+    return Math.round(enrollment.attendance_percentage);
+  }
+
+  // ✅ 3. present_count / total_attendance_records
+  const present =
+    enrollment.present_count ??
+    enrollment.attended_sessions ??
+    0;
+
+  const total =
+    enrollment.total_attendance_records ??
+    enrollment.total_sessions ??
+    0;
+
+  if (total > 0) {
+    return Math.round((present / total) * 100);
+  }
+
+  // ❌ non-memorization should NOT rely on completion_percentage
+  return 0;
+};
+
+
   const getProgressColor = (progress) => {
     if (progress >= 75) return theme.colors.success;
     if (progress >= 50) return theme.colors.warning;
     return theme.colors.error;
   };
 
-  // Get status badge color
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
@@ -92,367 +123,183 @@ const MyEnrollmentsScreen = () => {
     }
   };
 
-  // Render search bar
-  const renderSearchBar = () => (
-    <View style={styles.searchContainer}>
-      <MaterialCommunityIcons name="magnify" size={24} color={theme.colors.textSecondary} />
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search courses..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        onSubmitEditing={handleSearch}
-        returnKeyType="search"
-      />
-      {searchQuery.length > 0 && (
-        <TouchableOpacity onPress={() => { setSearchQuery(''); handleSearch(); }}>
-          <MaterialCommunityIcons name="close-circle" size={20} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-
-  // Render status filter tabs
-  const renderStatusFilters = () => (
-    <View style={styles.filterContainer}>
-      {['all', 'active', 'completed', 'dropped'].map((status) => (
-        <TouchableOpacity
-          key={status}
-          style={[
-            styles.filterTab,
-            statusFilter === status && styles.filterTabActive
-          ]}
-          onPress={() => setStatusFilter(status)}
-          activeOpacity={0.7}
-        >
-          <Text style={[
-            styles.filterTabText,
-            statusFilter === status && styles.filterTabTextActive
-          ]}>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-
-  // Render single enrollment card
   const renderEnrollment = ({ item }) => {
-    // ⭐ Backend returns: completion_percentage directly
-    const progress = Math.round(item.completion_percentage || 0);
-    
+    const progress = calculateProgress(item);
+    const progressColor = getProgressColor(progress);
+
+    const courseType = (
+      item.course_type ||
+      item.course_type_name ||
+      ''
+    ).toLowerCase();
+    const isMemorization = courseType === 'memorization';
+
     return (
       <TouchableOpacity
         style={styles.enrollmentCard}
-        onPress={() => navigation.navigate('EnrollmentDetails', { enrollmentId: item.id })}
-        activeOpacity={0.7}
+        activeOpacity={0.8}
+        onPress={() =>
+          navigation.navigate('EnrollmentDetails', {
+            enrollmentId: item.id,
+          })
+        }
       >
-        {/* Course Header */}
+        {/* Header */}
         <View style={styles.enrollmentHeader}>
-          <View style={styles.courseIconContainer}>
-            <MaterialCommunityIcons 
-              name={item.course_type === 'memorization' ? 'book-open-variant' : 'book-open'} 
-              size={28} 
-              color={theme.colors.primary} 
+          <View style={styles.courseIcon}>
+            <MaterialCommunityIcons
+              name={isMemorization ? 'book-open-variant' : 'book-open'}
+              size={26}
+              color={theme.colors.primary}
             />
           </View>
-          <View style={styles.enrollmentInfo}>
+
+          <View style={{ flex: 1 }}>
             <Text style={styles.courseName}>{item.course_name}</Text>
-            <View style={styles.courseMetaRow}>
-              <MaterialCommunityIcons name="tag" size={14} color={theme.colors.textSecondary} />
-              <Text style={styles.courseType}>{item.course_type}</Text>
-            </View>
+            <Text style={styles.courseType}>
+              {item.course_type || item.course_type_name}
+            </Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: getStatusColor(item.status) },
+            ]}
+          >
             <Text style={styles.statusText}>{item.status}</Text>
           </View>
         </View>
 
-        {/* Mosque Info */}
-        {item.mosque_name && (
-          <View style={styles.mosqueRow}>
-            <MaterialCommunityIcons name="mosque" size={16} color={theme.colors.textSecondary} />
-            <Text style={styles.mosqueText}>{item.mosque_name}</Text>
-          </View>
-        )}
-
-        {/* Progress Section */}
+        {/* Progress */}
         {item.status === 'active' && (
           <View style={styles.progressSection}>
-            <View style={styles.progressHeader}>
+            <View style={styles.progressRow}>
               <Text style={styles.progressLabel}>Progress</Text>
-              <Text style={[styles.progressValue, { color: getProgressColor(progress) }]}>
+              <Text style={[styles.progressValue, { color: progressColor }]}>
                 {progress}%
               </Text>
             </View>
-            <View style={styles.progressBarContainer}>
-              <View 
+
+            <View style={styles.progressBar}>
+              <View
                 style={[
-                  styles.progressBarFill, 
-                  { 
-                    width: `${progress}%`,
-                    backgroundColor: getProgressColor(progress)
-                  }
-                ]} 
+                  styles.progressFill,
+                  {
+                    width: `${Math.min(progress, 100)}%`,
+                    backgroundColor: progressColor,
+                  },
+                ]}
               />
             </View>
-          </View>
-        )}
 
-        {/* Course Duration */}
-        {(item.course_start_date || item.course_end_date) && (
-          <View style={styles.detailsRow}>
-            <View style={styles.detailItem}>
-              <MaterialCommunityIcons name="calendar-range" size={16} color={theme.colors.textSecondary} />
-              <Text style={styles.detailText}>
-                {item.course_start_date && new Date(item.course_start_date).toLocaleDateString()}
-                {item.course_start_date && item.course_end_date && ' - '}
-                {item.course_end_date && new Date(item.course_end_date).toLocaleDateString()}
+            {/* Attendance or Level */}
+            {!isMemorization && item.total_attendance_records > 0 ? (
+              <Text style={styles.metaText}>
+                📅 {item.present_count}/{item.total_attendance_records} sessions
               </Text>
-            </View>
+            ) : isMemorization && item.current_level ? (
+              <Text style={styles.metaText}>
+                🏆 Level: {item.current_level}
+              </Text>
+            ) : null}
           </View>
         )}
-
-        {/* Enrollment Date */}
-        <View style={styles.detailsRow}>
-          <View style={styles.detailItem}>
-            <MaterialCommunityIcons name="calendar" size={16} color={theme.colors.textSecondary} />
-            <Text style={styles.detailText}>
-              Enrolled: {new Date(item.enrollment_date).toLocaleDateString()}
-            </Text>
-          </View>
-        </View>
       </TouchableOpacity>
     );
   };
 
-  // Render empty state
-  const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <MaterialCommunityIcons name="book-open-outline" size={64} color={theme.colors.textLight} />
-      <Text style={styles.emptyText}>
-        {searchQuery ? 'No courses found' : 'No enrollments yet'}
-      </Text>
-      <TouchableOpacity
-        style={styles.browseButton}
-        onPress={() => navigation.navigate('BrowseCourses')}
-        activeOpacity={0.7}
-      >
-        <MaterialCommunityIcons name="magnify" size={20} color={theme.colors.white} />
-        <Text style={styles.browseButtonText}>Browse Courses</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
   if (loading) {
     return (
       <MainLayout title="My Enrollments">
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </MainLayout>
     );
   }
 
   return (
     <MainLayout title="My Enrollments">
-      <View style={styles.container}>
-        {renderSearchBar()}
-        {renderStatusFilters()}
-
-        <FlatList
-          data={enrollments}
-          renderItem={renderEnrollment}
-          keyExtractor={(item, index) => `enrollment-${item.id || index}`}
-          contentContainerStyle={styles.listContainer}
-          ListEmptyComponent={renderEmptyState}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        />
-      </View>
+      <FlatList
+        data={enrollments}
+        keyExtractor={(item) => item.id?.toString()}
+        renderItem={renderEnrollment}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListEmptyComponent={
+          <Text style={{ textAlign: 'center', marginTop: 40 }}>
+            No enrollments found
+          </Text>
+        }
+      />
     </MainLayout>
   );
 };
 
+export default MyEnrollmentsScreen;
+
+/* ================= STYLES ================= */
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.white,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    marginHorizontal: theme.spacing.md,
-    marginVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: theme.spacing.sm,
-    fontSize: theme.fontSize.md,
-    color: theme.colors.text,
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-  },
-  filterTab: {
-    flex: 1,
-    paddingVertical: theme.spacing.sm,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  filterTabActive: {
-    borderBottomColor: theme.colors.primary,
-  },
-  filterTabText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-  },
-  filterTabTextActive: {
-    color: theme.colors.primary,
-    fontWeight: '600',
-  },
-  listContainer: {
-    padding: theme.spacing.md,
-  },
   enrollmentCard: {
-    backgroundColor: theme.colors.white,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    marginBottom: theme.spacing.sm,
-    ...theme.shadows.small,
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+    padding: 16,
+    elevation: 2,
   },
   enrollmentHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: theme.spacing.sm,
-  },
-  courseIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: theme.colors.lightGray,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: theme.spacing.sm,
   },
-  enrollmentInfo: {
-    flex: 1,
+  courseIcon: {
+    marginRight: 12,
   },
   courseName: {
-    fontSize: theme.fontSize.md,
+    fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: 4,
-  },
-  courseMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   courseType: {
-    fontSize: theme.fontSize.sm,
+    fontSize: 13,
     color: theme.colors.textSecondary,
-    marginLeft: 4,
-    textTransform: 'capitalize',
   },
   statusBadge: {
-    paddingHorizontal: theme.spacing.sm,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: theme.borderRadius.sm,
+    borderRadius: 8,
   },
   statusText: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.white,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  mosqueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  mosqueText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    marginLeft: 4,
+    color: '#fff',
+    fontSize: 12,
   },
   progressSection: {
-    marginVertical: theme.spacing.sm,
+    marginTop: 14,
   },
-  progressHeader: {
+  progressRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 4,
   },
   progressLabel: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
   },
   progressValue: {
-    fontSize: theme.fontSize.sm,
     fontWeight: '600',
   },
-  progressBarContainer: {
+  progressBar: {
     height: 8,
-    backgroundColor: theme.colors.lightGray,
+    backgroundColor: '#eee',
     borderRadius: 4,
+    marginTop: 6,
     overflow: 'hidden',
   },
-  progressBarFill: {
+  progressFill: {
     height: '100%',
     borderRadius: 4,
   },
-  detailsRow: {
-    marginTop: theme.spacing.sm,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.xs,
-  },
-  detailText: {
-    fontSize: theme.fontSize.sm,
+  metaText: {
+    marginTop: 6,
+    fontSize: 12,
     color: theme.colors.textSecondary,
-    marginLeft: 4,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: theme.spacing.xxl * 2,
-  },
-  emptyText: {
-    fontSize: theme.fontSize.md,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
-  },
-  browseButton: {
-    flexDirection: 'row',
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
-  },
-  browseButtonText: {
-    fontSize: theme.fontSize.md,
-    fontWeight: '600',
-    color: theme.colors.white,
-    marginLeft: theme.spacing.sm,
   },
 });
-
-export default MyEnrollmentsScreen; 

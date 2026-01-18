@@ -53,38 +53,7 @@ const MinistryAdminProfileSection = ({ ministryAdminData }) => {
       <View style={styles.section}>
         <Text style={styles.subsectionTitle}>Management</Text>
         
-        {/* Mosque Management Card */}
-        <TouchableOpacity
-          style={styles.managementCard}
-          onPress={() => navigation.navigate('MosqueList')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.managementIconContainer}>
-            <MaterialCommunityIcons name="mosque" size={32} color={theme.colors.primary} />
-          </View>
-          <View style={styles.managementInfo}>
-            <Text style={styles.managementTitle}>Mosque Management</Text>
-            <Text style={styles.managementDesc}>View and manage all mosques</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-
-        {/* User Management Card */}
-        <TouchableOpacity
-          style={styles.managementCard}
-          onPress={() => navigation.navigate('UserList')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.managementIconContainer}>
-            <MaterialCommunityIcons name="account-group" size={32} color={theme.colors.success} />
-          </View>
-          <View style={styles.managementInfo}>
-            <Text style={styles.managementTitle}>User Management</Text>
-            <Text style={styles.managementDesc}>Manage users and roles</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-
+      
         {/* Statistics Card */}
         <TouchableOpacity
           style={styles.managementCard}
@@ -104,7 +73,7 @@ const MinistryAdminProfileSection = ({ ministryAdminData }) => {
         {/* Fundraising Events Card */}
         <TouchableOpacity
           style={styles.managementCard}
-          onPress={() => navigation.navigate('FundraisingApprovals')}
+          onPress={() => navigation.navigate('ApproveFundraising')}
           activeOpacity={0.7}
         >
           <View style={styles.managementIconContainer}>
@@ -119,49 +88,7 @@ const MinistryAdminProfileSection = ({ ministryAdminData }) => {
       </View>
 
       {/* Quick Actions Section */}
-      <View style={styles.section}>
-        <Text style={styles.subsectionTitle}>Quick Actions</Text>
-        
-        <View style={styles.quickActionsContainer}>
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => navigation.navigate('AddMosque')}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons name="plus-circle" size={28} color={theme.colors.white} />
-            <Text style={styles.quickActionText}>Add Mosque</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => navigation.navigate('AddUser')}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons name="account-plus" size={28} color={theme.colors.white} />
-            <Text style={styles.quickActionText}>Add User</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.quickActionsContainer}>
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => navigation.navigate('GeneralSettings')}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons name="cog" size={28} color={theme.colors.white} />
-            <Text style={styles.quickActionText}>Settings</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => navigation.navigate('Events')}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons name="calendar-star" size={28} color={theme.colors.white} />
-            <Text style={styles.quickActionText}>Events</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+   
     </ScrollView>
   );
 };

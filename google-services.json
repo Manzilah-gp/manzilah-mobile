@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "987112798700",
+    "project_id": "manzilah-notifications",
+    "storage_bucket": "manzilah-notifications.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:987112798700:android:133ac4df856729a0b1a8c9",
+        "android_client_info": {
+          "package_name": "com.manzilah.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjuU_n7MgCEt8XCvNwKY5mbtpZ1o54jZE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

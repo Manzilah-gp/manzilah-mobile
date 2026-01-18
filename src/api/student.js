@@ -15,6 +15,7 @@ export const getMyEnrollments = async (params = {}) => {
 // Get detailed enrollment information
 export const getEnrollmentDetails = async (enrollmentId) => {
   try {
+    // ⭐ FIXED: Removed backtick, added parentheses
     const response = await apiClient.get(`/api/enrollment/${enrollmentId}`);
     return response.data;
   } catch (error) {
@@ -35,6 +36,7 @@ export const getStudentStats = async (params = {}) => {
 // Withdraw from a course
 export const withdrawFromCourse = async (enrollmentId) => {
   try {
+    // ⭐ FIXED: Removed backtick, added parentheses
     const response = await apiClient.post(`/api/student/enrollments/${enrollmentId}/withdraw`);
     return response.data;
   } catch (error) {

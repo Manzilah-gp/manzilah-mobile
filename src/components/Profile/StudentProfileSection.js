@@ -1,13 +1,10 @@
-// Complete Student Profile Component matching backend data exactly
-// Displays enrollments, progress, attendance, and statistics
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  ScrollView,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -25,109 +22,219 @@ const StudentProfileSection = ({ studentData }) => {
     );
   }
 
-  const { enrollments = [], averageProgress = 0, attendanceRate = 0, activeCourses = 0 } = studentData;
+  const { enrollments = [] } = studentData;
 
-  // Calculate progress color
+  // ==============================
+  // 🔢 PROGRESS CALCULATION LOGIC
+  // ==============================
+  const calculateProgress = (enrollment) => {
+    const courseType =
+      enrollment.course_type || enrollment.course_type_name || '';
+    const isMemorization = courseType.toLowerCase() === 'memorization';
+
+    // Memorization: direct percentage
+    if (isMemorization) {
+      return enrollment.completion_percentage || enrollment.progress || 0;
+    }
+
+    // Non-memorization: attendance based
+    const totalRecords = enrollment.total_attendance_records || 0;
+    const presentCount = enrollment.present_count || 0;
+
+    if (totalRecords > 0) {
+      return (presentCount / totalRecords) * 100;
+    }
+
+    // fallback
+    return enrollment.completion_percentage || enrollment.progress || 0;
+  };
+
+  // ==============================
+  // 📊 STATISTICS CALCULATION
+  // ==============================
+  const stats = useMemo(() => {
+    const activeEnrollments = enrollments.filter(
+      (e) => e.status === 'active'
+    );
+
+    const activeCourses = activeEnrollments.length;
+
+    if (activeCourses === 0) {
+      return {
+        activeCourses: 0,
+        averageProgress: 0,
+        attendanceRate: 0,
+      };
+    }
+
+    let totalProgress = 0;
+    let totalAttendance = 0;
+    let attendanceCount = 0;
+
+    activeEnrollments.forEach((enrollment) => {
+      const courseType =
+        enrollment.course_type || enrollment.course_type_name || '';
+      const isMemorization = courseType.toLowerCase() === 'memorization';
+
+      const progress = calculateProgress(enrollment);
+      totalProgress += progress;
+
+      if (
+        !isMemorization &&
+        enrollment.total_attendance_records > 0
+      ) {
+        const rate =
+          (enrollment.present_count /
+            enrollment.total_attendance_records) *
+          100;
+
+        totalAttendance += rate;
+        attendanceCount++;
+      }
+    });
+
+    return {
+      activeCourses,
+      averageProgress: Math.round(totalProgress / activeCourses),
+      attendanceRate:
+        attendanceCount > 0
+          ? Math.round(totalAttendance / attendanceCount)
+          : 0,
+    };
+  }, [enrollments]);
+
+  // ==============================
+  // 🎨 UI HELPERS
+  // ==============================
   const getProgressColor = (progress) => {
     if (progress >= 75) return theme.colors.success;
     if (progress >= 50) return theme.colors.warning;
     return theme.colors.error;
   };
 
-  // Format course type name
   const formatCourseType = (type) => {
-    return type?.split('_').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ') || 'Course';
+    return (
+      type
+        ?.split('_')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ') || 'Course'
+    );
   };
 
-  // Render enrollment card
+  // ==============================
+  // 📘 RENDER ENROLLMENT CARD
+  // ==============================
   const renderEnrollment = ({ item }) => {
     const isMemorization = item.course_type === 'memorization';
-    
+    const progress = Math.round(calculateProgress(item));
+
     return (
       <TouchableOpacity
         style={styles.enrollmentCard}
-        onPress={() => navigation.navigate('CourseDetails', { enrollmentId: item.enrollment_id })}
+        onPress={() =>
+          navigation.navigate('CourseDetails', {
+            enrollmentId: item.enrollment_id,
+          })
+        }
         activeOpacity={0.7}
       >
-        {/* Course Header */}
         <View style={styles.enrollmentHeader}>
           <View style={styles.courseIconContainer}>
-            <MaterialCommunityIcons 
-              name={isMemorization ? 'book-open-variant' : 'book-open'} 
-              size={28} 
-              color={theme.colors.primary} 
+            <MaterialCommunityIcons
+              name={isMemorization ? 'book-open-variant' : 'book-open'}
+              size={28}
+              color={theme.colors.primary}
             />
           </View>
+
           <View style={styles.enrollmentInfo}>
             <Text style={styles.courseName}>{item.course_name}</Text>
             <View style={styles.courseMetaRow}>
-              <MaterialCommunityIcons name="tag" size={14} color={theme.colors.textSecondary} />
-              <Text style={styles.courseType}>{formatCourseType(item.course_type)}</Text>
+              <MaterialCommunityIcons
+                name="tag"
+                size={14}
+                color={theme.colors.textSecondary}
+              />
+              <Text style={styles.courseType}>
+                {formatCourseType(item.course_type)}
+              </Text>
             </View>
           </View>
-          <View style={[styles.statusBadge, item.status === 'active' && styles.statusActive]}>
+
+          <View
+            style={[
+              styles.statusBadge,
+              item.status === 'active' && styles.statusActive,
+            ]}
+          >
             <Text style={styles.statusText}>{item.status}</Text>
           </View>
         </View>
 
-        {/* Teacher Info */}
         {item.teacher_name && (
           <View style={styles.teacherRow}>
-            <MaterialCommunityIcons name="account-tie" size={16} color={theme.colors.textSecondary} />
+            <MaterialCommunityIcons
+              name="account-tie"
+              size={16}
+              color={theme.colors.textSecondary}
+            />
             <Text style={styles.teacherText}>{item.teacher_name}</Text>
           </View>
         )}
 
-        {/* Progress Section */}
         <View style={styles.progressSection}>
           <View style={styles.progressHeader}>
             <Text style={styles.progressLabel}>Progress</Text>
-            <Text style={[styles.progressValue, { color: getProgressColor(item.progress) }]}>
-              {Math.round(item.progress)}%
+            <Text
+              style={[
+                styles.progressValue,
+                { color: getProgressColor(progress) },
+              ]}
+            >
+              {progress}%
             </Text>
           </View>
+
           <View style={styles.progressBarContainer}>
-            <View 
+            <View
               style={[
-                styles.progressBarFill, 
-                { 
-                  width: `${item.progress}%`,
-                  backgroundColor: getProgressColor(item.progress)
-                }
-              ]} 
+                styles.progressBarFill,
+                {
+                  width: `${Math.min(progress, 100)}%`,
+                  backgroundColor: getProgressColor(progress),
+                },
+              ]}
             />
           </View>
         </View>
 
-        {/* Memorization-specific details */}
         {isMemorization && item.current_level && (
           <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="trophy" size={16} color={theme.colors.warning} />
-            <Text style={styles.detailText}>Level: {item.current_level}</Text>
-          </View>
-        )}
-
-        {/* Page progress for memorization */}
-        {isMemorization && item.current_page && (
-          <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="book-open-page-variant" size={16} color={theme.colors.primary} />
+            <MaterialCommunityIcons
+              name="trophy"
+              size={16}
+              color={theme.colors.warning}
+            />
             <Text style={styles.detailText}>
-              Page {item.current_page} of {item.level_end_page}
+              Level: {item.current_level}
             </Text>
           </View>
         )}
 
-        {/* Attendance for non-memorization courses */}
-        {!isMemorization && item.total_attendance_records > 0 && (
-          <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="calendar-check" size={16} color={theme.colors.success} />
-            <Text style={styles.detailText}>
-              Attendance: {item.present_count}/{item.total_attendance_records} sessions
-            </Text>
-          </View>
-        )}
+        {!isMemorization &&
+          item.total_attendance_records > 0 && (
+            <View style={styles.detailRow}>
+              <MaterialCommunityIcons
+                name="calendar-check"
+                size={16}
+                color={theme.colors.success}
+              />
+              <Text style={styles.detailText}>
+                Attendance: {item.present_count}/
+                {item.total_attendance_records}
+              </Text>
+            </View>
+          )}
       </TouchableOpacity>
     );
   };
@@ -136,47 +243,56 @@ const StudentProfileSection = ({ studentData }) => {
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>My Enrollments</Text>
 
-      {/* Statistics Cards */}
+      {/* 📊 Statistics Cards */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
-          <MaterialCommunityIcons name="book-multiple" size={24} color={theme.colors.primary} />
-          <Text style={styles.statValue}>{activeCourses}</Text>
+          <MaterialCommunityIcons
+            name="book-open"
+            size={32}
+            color={theme.colors.primary}
+          />
+          <Text style={styles.statValue}>{stats.activeCourses}</Text>
           <Text style={styles.statLabel}>Active Courses</Text>
         </View>
+
         <View style={styles.statCard}>
-          <MaterialCommunityIcons name="chart-line" size={24} color={theme.colors.success} />
-          <Text style={styles.statValue}>{Math.round(averageProgress)}%</Text>
+          <MaterialCommunityIcons
+            name="chart-line"
+            size={32}
+            color={theme.colors.success}
+          />
+          <Text style={styles.statValue}>
+            {stats.averageProgress}%
+          </Text>
           <Text style={styles.statLabel}>Avg Progress</Text>
         </View>
+
         <View style={styles.statCard}>
-          <MaterialCommunityIcons name="calendar-check" size={24} color={theme.colors.warning} />
-          <Text style={styles.statValue}>{Math.round(attendanceRate)}%</Text>
+          <MaterialCommunityIcons
+            name="calendar-check"
+            size={32}
+            color={theme.colors.warning}
+          />
+          <Text style={styles.statValue}>
+            {stats.attendanceRate}%
+          </Text>
           <Text style={styles.statLabel}>Attendance</Text>
         </View>
       </View>
 
-      {/* Enrollments List */}
       {enrollments.length > 0 ? (
         <FlatList
           data={enrollments}
           renderItem={renderEnrollment}
-          keyExtractor={(item) => item.enrollment_id?.toString()}
+          keyExtractor={(item) =>
+            item.enrollment_id?.toString()
+          }
           scrollEnabled={false}
-          contentContainerStyle={styles.listContainer}
         />
       ) : (
-        <View style={styles.emptyState}>
-          <MaterialCommunityIcons name="book-open-outline" size={64} color={theme.colors.textLight} />
-          <Text style={styles.emptyText}>No active enrollments</Text>
-          <TouchableOpacity
-            style={styles.browseButton}
-            onPress={() => navigation.navigate('BrowseCourses')}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons name="magnify" size={20} color={theme.colors.white} />
-            <Text style={styles.browseButtonText}>Browse Courses</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.emptyText}>
+          No active enrollments
+        </Text>
       )}
     </View>
   );

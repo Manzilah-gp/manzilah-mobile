@@ -1,4 +1,5 @@
-// Enrollment Details Screen - shows complete enrollment information
+// EnrollmentDetailsScreen.js - FINAL FIXED VERSION
+// Correctly displays progress matching backend data
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -21,16 +22,15 @@ const EnrollmentDetailsScreen = ({ route }) => {
   const [loading, setLoading] = useState(true);
   const [enrollment, setEnrollment] = useState(null);
 
-  // Load enrollment details on mount
   useEffect(() => {
     loadEnrollmentDetails();
   }, []);
 
-  // Fetch enrollment details from API
   const loadEnrollmentDetails = async () => {
     try {
       setLoading(true);
       const response = await getEnrollmentDetails(enrollmentId);
+      console.log('📋 Enrollment details:', response.data);
       setEnrollment(response.data);
     } catch (error) {
       console.error('Error loading enrollment details:', error);
@@ -41,7 +41,10 @@ const EnrollmentDetailsScreen = ({ route }) => {
     }
   };
 
-  // Handle withdraw from course
+  const handleViewProgress = () => {
+    navigation.navigate('ProgressDetails', { enrollmentId: enrollmentId });
+  };
+
   const handleWithdraw = () => {
     Alert.alert(
       'Withdraw from Course',
@@ -65,14 +68,36 @@ const EnrollmentDetailsScreen = ({ route }) => {
     );
   };
 
-  // Get progress color based on percentage
+  // ⭐ UNIFIED PROGRESS CALCULATION - Matches backend exactly
+  const calculateProgress = (enrollment) => {
+    if (!enrollment) return 0;
+    
+    const courseType = (enrollment.course_type_name || enrollment.course_type || '').toLowerCase();
+    const isMemorization = courseType === 'memorization';
+    
+    if (isMemorization) {
+      // For memorization: use completion_percentage (already 0-100)
+      return Math.round(enrollment.completion_percentage || 0);
+    }
+    
+    // For non-memorization: calculate from attendance
+    const totalRecords = enrollment.total_attendance_records || 0;
+    const presentCount = enrollment.present_count || 0;
+    
+    if (totalRecords > 0) {
+      return Math.round((presentCount / totalRecords) * 100);
+    }
+    
+    // Fallback to completion_percentage
+    return Math.round(enrollment.completion_percentage || 0);
+  };
+
   const getProgressColor = (progress) => {
     if (progress >= 75) return theme.colors.success;
     if (progress >= 50) return theme.colors.warning;
     return theme.colors.error;
   };
 
-  // Show loading indicator
   if (loading) {
     return (
       <MainLayout title="Enrollment Details">
@@ -93,12 +118,14 @@ const EnrollmentDetailsScreen = ({ route }) => {
     );
   }
 
-  const isMemorization = enrollment.course_type_name === 'memorization';
+  const courseType = (enrollment.course_type_name || enrollment.course_type || '').toLowerCase();
+  const isMemorization = courseType === 'memorization';
+  const progress = calculateProgress(enrollment);
+  const progressColor = getProgressColor(progress);
 
   return (
     <MainLayout title="Enrollment Details">
       <ScrollView style={styles.container}>
-        {/* Course Header Card */}
         <View style={styles.headerCard}>
           <View style={styles.courseIconContainer}>
             <MaterialCommunityIcons 
@@ -111,7 +138,7 @@ const EnrollmentDetailsScreen = ({ route }) => {
             <Text style={styles.courseName}>{enrollment.course_name}</Text>
             <View style={styles.courseMetaRow}>
               <MaterialCommunityIcons name="tag" size={16} color={theme.colors.textSecondary} />
-              <Text style={styles.courseType}>{enrollment.course_type_name}</Text>
+              <Text style={styles.courseType}>{enrollment.course_type_name || enrollment.course_type}</Text>
             </View>
             <View style={[styles.statusBadge, { backgroundColor: enrollment.status === 'active' ? theme.colors.success : theme.colors.gray }]}>
               <Text style={styles.statusText}>{enrollment.status}</Text>
@@ -119,12 +146,10 @@ const EnrollmentDetailsScreen = ({ route }) => {
           </View>
         </View>
 
-        {/* Course Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Course Information</Text>
           
-          {/* Mosque */}
-          {enrollment.mosque_name && (
+          {enrollment.mosque_name ? (
             <View style={styles.infoRow}>
               <MaterialCommunityIcons name="mosque" size={20} color={theme.colors.primary} />
               <View style={styles.infoContent}>
@@ -132,10 +157,9 @@ const EnrollmentDetailsScreen = ({ route }) => {
                 <Text style={styles.infoValue}>{enrollment.mosque_name}</Text>
               </View>
             </View>
-          )}
+          ) : null}
 
-          {/* Teacher */}
-          {enrollment.teacher_name && (
+          {enrollment.teacher_name ? (
             <View style={styles.infoRow}>
               <MaterialCommunityIcons name="account-tie" size={20} color={theme.colors.primary} />
               <View style={styles.infoContent}>
@@ -143,9 +167,8 @@ const EnrollmentDetailsScreen = ({ route }) => {
                 <Text style={styles.infoValue}>{enrollment.teacher_name}</Text>
               </View>
             </View>
-          )}
+          ) : null}
 
-          {/* Enrollment Date */}
           <View style={styles.infoRow}>
             <MaterialCommunityIcons name="calendar" size={20} color={theme.colors.primary} />
             <View style={styles.infoContent}>
@@ -157,17 +180,26 @@ const EnrollmentDetailsScreen = ({ route }) => {
           </View>
         </View>
 
-        {/* Progress Section - Only for Active Enrollments */}
-        {enrollment.status === 'active' && (
+        {enrollment.status === 'active' ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Progress</Text>
+            <View style={styles.progressSectionHeader}>
+              <Text style={styles.sectionTitle}>Progress Overview</Text>
+              
+              <TouchableOpacity
+                style={styles.viewProgressButton}
+                onPress={handleViewProgress}
+                activeOpacity={0.7}
+              >
+                <MaterialCommunityIcons name="chart-line" size={18} color={theme.colors.primary} />
+                <Text style={styles.viewProgressText}>View Details</Text>
+              </TouchableOpacity>
+            </View>
             
-            {/* Progress Bar */}
             <View style={styles.progressContainer}>
               <View style={styles.progressHeader}>
                 <Text style={styles.progressLabel}>Overall Progress</Text>
-                <Text style={[styles.progressValue, { color: getProgressColor(enrollment.progress) }]}>
-                  {Math.round(enrollment.progress || 0)}%
+                <Text style={[styles.progressValue, { color: progressColor }]}>
+                  {progress}%
                 </Text>
               </View>
               <View style={styles.progressBarContainer}>
@@ -175,16 +207,23 @@ const EnrollmentDetailsScreen = ({ route }) => {
                   style={[
                     styles.progressBarFill, 
                     { 
-                      width: `${enrollment.progress || 0}%`,
-                      backgroundColor: getProgressColor(enrollment.progress)
+                      width: `${Math.min(progress, 100)}%`,
+                      backgroundColor: progressColor
                     }
                   ]} 
                 />
               </View>
             </View>
 
-            {/* Memorization-Specific Details */}
-            {isMemorization && (
+            <View style={styles.infoBox}>
+              <MaterialCommunityIcons name="information" size={20} color={theme.colors.primary} />
+              <Text style={styles.infoBoxText}>
+                Tap "View Details" for complete progress tracking with attendance, history timeline, and detailed analytics.
+              </Text>
+            </View>
+
+            {/* MEMORIZATION DETAILS */}
+            {isMemorization && enrollment.current_page ? (
               <View style={styles.memorizationDetails}>
                 <View style={styles.detailCard}>
                   <Text style={styles.detailLabel}>Current Page</Text>
@@ -201,10 +240,10 @@ const EnrollmentDetailsScreen = ({ route }) => {
                   </Text>
                 </View>
               </View>
-            )}
+            ) : null}
 
-            {/* Attendance Details */}
-            {!isMemorization && enrollment.total_attendance_records > 0 && (
+            {/* ATTENDANCE DETAILS FOR NON-MEMORIZATION */}
+            {!isMemorization && enrollment.total_attendance_records > 0 ? (
               <View style={styles.attendanceDetails}>
                 <View style={styles.attendanceCard}>
                   <MaterialCommunityIcons name="check-circle" size={32} color={theme.colors.success} />
@@ -219,19 +258,16 @@ const EnrollmentDetailsScreen = ({ route }) => {
                 <View style={styles.attendanceCard}>
                   <MaterialCommunityIcons name="percent" size={32} color={theme.colors.warning} />
                   <Text style={styles.attendanceValue}>
-                    {enrollment.total_attendance_records > 0 
-                      ? Math.round((enrollment.present_count / enrollment.total_attendance_records) * 100)
-                      : 0}%
+                    {progress}%
                   </Text>
                   <Text style={styles.attendanceLabel}>Attendance Rate</Text>
                 </View>
               </View>
-            )}
+            ) : null}
           </View>
-        )}
+        ) : null}
 
-        {/* Course Schedule */}
-        {enrollment.schedule && enrollment.schedule.length > 0 && (
+        {enrollment.schedule && enrollment.schedule.length > 0 ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Schedule</Text>
             {enrollment.schedule.map((schedule, index) => (
@@ -246,10 +282,9 @@ const EnrollmentDetailsScreen = ({ route }) => {
               </View>
             ))}
           </View>
-        )}
+        ) : null}
 
-        {/* Withdraw Button - Only for Active Enrollments */}
-        {enrollment.status === 'active' && (
+        {enrollment.status === 'active' ? (
           <TouchableOpacity
             style={styles.withdrawButton}
             onPress={handleWithdraw}
@@ -258,7 +293,7 @@ const EnrollmentDetailsScreen = ({ route }) => {
             <MaterialCommunityIcons name="exit-to-app" size={20} color={theme.colors.white} />
             <Text style={styles.withdrawButtonText}>Withdraw from Course</Text>
           </TouchableOpacity>
-        )}
+        ) : null}
       </ScrollView>
     </MainLayout>
   );
@@ -343,6 +378,41 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
   },
+  progressSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  viewProgressButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.lightGray,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+  },
+  viewProgressText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: '600',
+    color: theme.colors.primary,
+    marginLeft: 4,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    backgroundColor: '#E3F2FD',
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+  },
+  infoBoxText: {
+    flex: 1,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.text,
+    marginLeft: theme.spacing.sm,
+    lineHeight: 20,
+  },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -363,7 +433,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   progressContainer: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
   },
   progressHeader: {
     flexDirection: 'row',

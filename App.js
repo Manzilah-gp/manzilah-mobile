@@ -1,9 +1,12 @@
-// COMPLETE App.js - WITH ALL NAVIGATION SCREENS ADDED
-import React from 'react';
+// COMPLETE App.js - WITH NOTIFICATIONS ADDED
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { ActivityIndicator, View } from 'react-native'; 
+
+// Import notification service
+import notificationService from './src/services/notificationService';
 
 // Auth Screens (you already have these)
 import LoginScreen from './src/screens/Auth/LoginScreen';
@@ -24,12 +27,12 @@ import ProgressReportsScreen from './src/screens/Parent/ProgressReportsScreen';
 import ChildDetailsScreen from './src/screens/Parent/ChildDetailsScreen';
 
 // Ministry Admin Screens
-import  FundraisingEventsScreen  from './src/screens/MinistryAdmin/FundraisingEventsScreen';
 
 // Mosque Admin Screens
 import { MyMosqueScreen, EventsManagementScreen } from './src/screens/MosqueAdmin/MosqueAdminScreens';
 import CreateEventScreen from './src/screens/MosqueAdmin/CreateEventScreen';
-
+import CourseListScreen from './src/screens/MosqueAdmin/CourseListScreen'
+import TeacherListScreen from './src/screens/MosqueAdmin/TeacherListScreen'
 // Events (All Users)
 import EventsScreen from './src/screens/Events/EventsScreen';
 
@@ -46,6 +49,12 @@ import TajweedRulesScreen from './src/screens/Tajweed/TajweedRulesScreen';
 import TajweedTrainingScreen from './src/screens/Tajweed/TajweedTrainingScreen';
 import ChatScreen from './src/screens/Chatscreen';
 
+// Notification Screens
+import NotificationsScreen from './src/screens/Notifications/NotificationsScreen';
+import ProgressDetailsScreen from './src/screens/Student/ProgressDetailsScreen';
+import StatisticsScreen from './src/screens/MinistryAdmin/StatisticsScreen';
+import ApproveFundraisingScreen from './src/screens/MinistryAdmin/ApproveFundraisingScreen';
+
 const Stack = createStackNavigator();
 
 // Auth Stack
@@ -55,7 +64,7 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-// Main Stack - WITH ALL SCREENS INCLUDING MISSING ONES
+// Main Stack - WITH ALL SCREENS INCLUDING NOTIFICATIONS
 const MainStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     {/* Main Screens */}
@@ -79,15 +88,15 @@ const MainStack = () => (
     <Stack.Screen name="QuranMushaf" component={MushafScreen}/>
     <Stack.Screen name="TajweedRules" component={TajweedRulesScreen} />
     <Stack.Screen name="TajweedTraining" component={TajweedTrainingScreen} />
-    <Stack.Screen name="Chat"  component={ChatScreen} options={{ headerShown: false }}/>
+    <Stack.Screen name="Chat" component={ChatScreen} options={{ headerShown: false }}/>
 
+    {/* ===== NOTIFICATIONS ===== */}
+    <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }}/>
 
-
-
-    
-    {/* MISSING SCREENS - ADD THESE: */}
-<Stack.Screen name="EnrollmentInfo" component={EnrollmentDetailsScreen} />
+    <Stack.Screen name="EnrollmentInfo" component={EnrollmentDetailsScreen} />
     <Stack.Screen name="Courses" component={MyEnrollmentsScreen} />
+    <Stack.Screen name="ProgressDetails" component={ProgressDetailsScreen} />
+
     
     {/* ===== PARENT SCREENS ===== */}
     <Stack.Screen name="MyChildren" component={MyChildrenScreen} />
@@ -100,13 +109,19 @@ const MainStack = () => (
     <Stack.Screen name="LinkChild" component={MyChildrenScreen} />
     
     {/* ===== MINISTRY ADMIN SCREENS ===== */}
-    <Stack.Screen name="FundraisingApprovals" component={FundraisingEventsScreen} />
+    <Stack.Screen name="Statistics" component={StatisticsScreen} />
+    <Stack.Screen name="ApproveFundraising" component={ApproveFundraisingScreen} />
+
+
     
     {/* ===== MOSQUE ADMIN SCREENS ===== */}
     <Stack.Screen name="MyMosque" component={MyMosqueScreen} />
     <Stack.Screen name="EventsManagement" component={EventsManagementScreen} />
     <Stack.Screen name="CreateEvent" component={CreateEventScreen} />
     <Stack.Screen name="EditEvent" component={CreateEventScreen} />
+    <Stack.Screen name="CourseList" component={CourseListScreen} />
+    <Stack.Screen name="TeachersManagement" component={TeacherListScreen} />
+
     
     {/* ===== EVENTS (ALL USERS) ===== */}
     <Stack.Screen name="Events" component={EventsScreen} />
@@ -117,6 +132,19 @@ const MainStack = () => (
 // Root Navigator
 const RootNavigator = () => {
   const { user, loading } = useAuth();
+
+  // Initialize notifications when user is logged in
+  useEffect(() => {
+    if (user) {
+      console.log('🔔 User logged in, initializing notifications...');
+      notificationService.initialize();
+    }
+
+    // Cleanup on unmount
+    return () => {
+      notificationService.cleanup();
+    };
+  }, [user]);
 
   if (loading) {
     return (

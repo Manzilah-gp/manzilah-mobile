@@ -98,85 +98,44 @@ const Sidebar = ({ user, onClose }) => {
     name: 'Browse Courses',
     icon: 'book-open',
     screen: 'BrowseCourses',
-    title:'Courses'
+    title:'All Courses'
   },
 
       // ==================== MINISTRY ADMIN ONLY ====================
-      {
-        key: 'statistics',
-        title: 'Statistics',
-        icon: 'chart-bar',
-        screen: 'Statistics',
-        roles: ['mosque_admin', 'ministry_admin']
-      },
-      {
-        key: 'mosques',
-        title: 'Mosque Management',
-        icon: 'mosque',
-        roles: ['ministry_admin'],
-        children: [
-          {
-            key: 'add-mosque',
-            title: 'Add Mosque',
-            screen: 'AddMosque',
-            icon: 'plus'
-          },
-          {
-            key: 'mosque-list',
-            title: 'Mosque List',
-            screen: 'MosqueList',
-            icon: 'format-list-bulleted'
-          }
-        ]
-      },
-      {
-        key: 'fundraising',
-        title: 'Fundraising Events',
-        icon: 'cash-multiple',
-        screen: 'FundraisingApprovals',
-        roles: ['ministry_admin']
-      },
-      {
-        key: 'user-management',
-        title: 'User Management',
-        icon: 'account-group',
-        roles: ['ministry_admin'],
-        children: [
-          {
-            key: 'add-user',
-            title: 'Add User',
-            screen: 'AddUser',
-            icon: 'account-plus'
-          },
-          {
-            key: 'user-list',
-            title: 'User List',
-            screen: 'UserList',
-            icon: 'format-list-bulleted'
-          }
-        ]
-      },
-      {
-        key: 'settings',
-        title: 'Settings',
-        icon: 'cog',
-        roles: ['ministry_admin'],
-        children: [
-          {
-            key: 'general-settings',
-            title: 'General',
-            screen: 'GeneralSettings',
-            icon: 'cog-outline'
-          },
-          {
-            key: 'notifications',
-            title: 'Notifications',
-            screen: 'NotificationSettings',
-            icon: 'bell-outline'
-          }
-        ]
-      },
-
+{
+  key: 'statistics',
+  title: 'System Statistics',
+  icon: 'chart-bar',
+  screen: 'Statistics',
+  roles: ['ministry_admin']
+},
+{
+  key: 'fundraising',
+  title: 'Approve Fundraising',
+  icon: 'cash-check',
+  screen: 'ApproveFundraising',
+  roles: ['ministry_admin']
+},
+{
+  key: 'mosques',
+  title: 'Mosque Management',
+  icon: 'mosque',
+  roles: ['ministry_admin'],
+  children: [
+    {
+      key: 'add-mosque',
+      title: 'Add Mosque',
+      screen: 'AddMosque',
+      icon: 'plus'
+    },
+    {
+      key: 'mosque-list',
+      title: 'Mosque List',
+      screen: 'MosqueList',
+      icon: 'format-list-bulleted'
+    }
+  ]
+},
       // ==================== MOSQUE ADMIN ONLY ====================
       {
         key: 'my-mosque',
@@ -194,7 +153,7 @@ const Sidebar = ({ user, onClose }) => {
       },
       {
         key: 'courses',
-        title: 'Courses',
+        title: 'Our Courses',
         icon: 'book-open-variant',
         roles: ['mosque_admin'],
         children: [
@@ -239,13 +198,7 @@ const Sidebar = ({ user, onClose }) => {
       },
 
       // ==================== PARENT ONLY ====================
-      {
-        key: 'children',
-        title: 'My Children',
-        icon: 'human-child',
-        screen: 'MyChildren',
-        roles: ['parent']
-      },
+    
       {
         key: 'progress',
         title: 'Progress Reports',
@@ -374,17 +327,6 @@ const Sidebar = ({ user, onClose }) => {
           >
             <MaterialCommunityIcons name="chat" size={24} color={theme.colors.primary} />
             <Text style={styles.menuText}>Chat</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={theme.colors.textLight} />
-          </TouchableOpacity>
-
-          {/* Storyteller - All Users */}
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigateTo('Storyteller')}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons name="book-open-page-variant" size={24} color={theme.colors.primary} />
-            <Text style={styles.menuText}>Storyteller</Text>
             <MaterialCommunityIcons name="chevron-right" size={20} color={theme.colors.textLight} />
           </TouchableOpacity>
 
