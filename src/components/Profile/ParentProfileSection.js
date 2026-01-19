@@ -146,11 +146,11 @@ const ParentProfileSection = ({ parentData }) => {
       <View style={styles.actionsContainer}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => navigation.navigate('LinkChild')}
+          onPress={() => navigation.navigate('MyChildren')}
           activeOpacity={0.7}
         >
           <MaterialCommunityIcons name="link-plus" size={20} color={theme.colors.white} />
-          <Text style={styles.actionButtonText}>Link Child</Text>
+          <Text style={styles.actionButtonText}>My Children</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}

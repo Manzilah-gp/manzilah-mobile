@@ -137,13 +137,7 @@ const Sidebar = ({ user, onClose }) => {
   ]
 },
       // ==================== MOSQUE ADMIN ONLY ====================
-      {
-        key: 'my-mosque',
-        title: 'My Mosque',
-        icon: 'mosque',
-        screen: 'MyMosque',
-        roles: ['mosque_admin']
-      },
+ 
       {
         key: 'teachers-management',
         title: 'Teachers Management',
@@ -180,21 +174,14 @@ const Sidebar = ({ user, onClose }) => {
         screen: 'MyCourses',
         roles: ['teacher']
       },
-      {
-        key: 'all-students',
-        title: 'All Students',
-        icon: 'account-group',
-        screen: 'TeacherStudents',
-        roles: ['teacher']
-      },
 
       // ==================== STUDENT & PARENT ====================
       {
         key: 'my-enrollments',
-        title: userRoles.includes('student') ? 'My Enrollments' : 'Children Enrollments',
+        title:'My Enrollments',
         icon: 'book-open',
         screen: 'MyEnrollments',
-        roles: ['student', 'parent']
+        roles: ['student',]
       },
 
       // ==================== PARENT ONLY ====================

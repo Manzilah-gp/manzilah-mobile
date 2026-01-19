@@ -102,24 +102,7 @@ const BrowseMosquesScreen = () => {
     </View>
   );
 
-  // Render governorate filter
-  const renderFilter = () => (
-    <View style={styles.filterContainer}>
-      <Text style={styles.filterLabel}>Governorate:</Text>
-      <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={selectedGovernorate}
-          onValueChange={(value) => setSelectedGovernorate(value)}
-          style={styles.picker}
-        >
-          <Picker.Item label="All Governorates" value="all" />
-          {governorates.map((gov) => (
-            <Picker.Item key={gov} label={gov} value={gov} />
-          ))}
-        </Picker>
-      </View>
-    </View>
-  );
+
 
   // Render single mosque card
   const renderMosque = ({ item }) => (
@@ -199,7 +182,6 @@ const BrowseMosquesScreen = () => {
     <MainLayout title="Browse Mosques">
       <View style={styles.container}>
         {renderSearchBar()}
-        {renderFilter()}
 
         <FlatList
           data={mosques}

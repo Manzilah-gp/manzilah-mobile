@@ -10,7 +10,6 @@ import notificationService from './src/services/notificationService';
 
 // Auth Screens (you already have these)
 import LoginScreen from './src/screens/Auth/LoginScreen';
-import RegisterScreen from './src/screens/Auth/RegisterScreen';
 
 // Main Screens (you already have these)
 import HomeScreen from './src/screens/Home/HomeScreen';
@@ -22,7 +21,7 @@ import EnrollmentDetailsScreen from './src/screens/Student/EnrollmentDetailsScre
 import PaymentScreen from './src/screens/Student/PaymentScreen';
 
 // Parent Screens
-import { MyChildrenScreen } from './src/screens/Parent/MyChildrenScreen';
+import  MyChildrenScreen  from './src/screens/Parent/MyChildrenScreen';
 import ProgressReportsScreen from './src/screens/Parent/ProgressReportsScreen';
 import ChildDetailsScreen from './src/screens/Parent/ChildDetailsScreen';
 
@@ -32,6 +31,7 @@ import ChildDetailsScreen from './src/screens/Parent/ChildDetailsScreen';
 import { MyMosqueScreen, EventsManagementScreen } from './src/screens/MosqueAdmin/MosqueAdminScreens';
 import CreateEventScreen from './src/screens/MosqueAdmin/CreateEventScreen';
 import CourseListScreen from './src/screens/MosqueAdmin/CourseListScreen'
+
 import TeacherListScreen from './src/screens/MosqueAdmin/TeacherListScreen'
 // Events (All Users)
 import EventsScreen from './src/screens/Events/EventsScreen';
@@ -54,6 +54,11 @@ import NotificationsScreen from './src/screens/Notifications/NotificationsScreen
 import ProgressDetailsScreen from './src/screens/Student/ProgressDetailsScreen';
 import StatisticsScreen from './src/screens/MinistryAdmin/StatisticsScreen';
 import ApproveFundraisingScreen from './src/screens/MinistryAdmin/ApproveFundraisingScreen';
+
+// Teacher Screens
+import Mycoursesscreen from './src/screens/Teacher/Mycoursesscreen';
+import CourseStudentsScreen from './src/screens/Teacher/CourseStudentsScreen';
+
 
 const Stack = createStackNavigator();
 
@@ -102,11 +107,11 @@ const MainStack = () => (
     <Stack.Screen name="MyChildren" component={MyChildrenScreen} />
     <Stack.Screen name="ProgressReports" component={ProgressReportsScreen} />
     <Stack.Screen name="ChildDetails" component={ChildDetailsScreen} />
+
     
     {/* MISSING PARENT SCREENS - ADD THESE: */}
     <Stack.Screen name="ChildEnrollments" component={ProgressReportsScreen} />
     <Stack.Screen name="ChildProgress" component={ChildDetailsScreen} />
-    <Stack.Screen name="LinkChild" component={MyChildrenScreen} />
     
     {/* ===== MINISTRY ADMIN SCREENS ===== */}
     <Stack.Screen name="Statistics" component={StatisticsScreen} />
@@ -122,10 +127,18 @@ const MainStack = () => (
     <Stack.Screen name="CourseList" component={CourseListScreen} />
     <Stack.Screen name="TeachersManagement" component={TeacherListScreen} />
 
+
     
     {/* ===== EVENTS (ALL USERS) ===== */}
     <Stack.Screen name="Events" component={EventsScreen} />
     <Stack.Screen name="EventDetails" component={EventsScreen} />
+
+    {/* Teacher Pages  */}
+    <Stack.Screen name="MyCourses" component={Mycoursesscreen } />
+    <Stack.Screen name="CourseStudents" component={CourseStudentsScreen} />
+
+
+
   </Stack.Navigator>
 );
 

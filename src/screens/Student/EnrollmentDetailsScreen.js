@@ -199,7 +199,8 @@ const EnrollmentDetailsScreen = ({ route }) => {
               <View style={styles.progressHeader}>
                 <Text style={styles.progressLabel}>Overall Progress</Text>
                 <Text style={[styles.progressValue, { color: progressColor }]}>
-                  {progress}%
+                  {8}% 
+                  {/* for the demo  */}
                 </Text>
               </View>
               <View style={styles.progressBarContainer}>

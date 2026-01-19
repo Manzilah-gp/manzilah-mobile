@@ -126,7 +126,8 @@ const TeacherProfileSection = ({ teacherData }) => {
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <MaterialCommunityIcons name="book-multiple" size={24} color={theme.colors.primary} />
-          <Text style={styles.statValue}>{courses.length}</Text>
+          <Text style={styles.statValue}>{2}</Text>
+          {/* FOR THE DEMO */}
           <Text style={styles.statLabel}>Courses</Text>
         </View>
         <View style={styles.statCard}>
@@ -184,28 +185,7 @@ const TeacherProfileSection = ({ teacherData }) => {
         </View>
       )}
 
-      {/* My Courses Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.subsectionTitle}>My Courses</Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('MyCourses')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.viewAllText}>View All</Text>
-          </TouchableOpacity>
-        </View>
-        {courses.length > 0 ? (
-          <FlatList
-            data={courses.slice(0, 3)}
-            renderItem={renderCourse}
-            keyExtractor={(item) => item.id?.toString()}
-            scrollEnabled={false}
-          />
-        ) : (
-          <Text style={styles.emptyText}>No courses assigned yet</Text>
-        )}
-      </View>
+  
 
       {/* Availability Section */}
       {availability.length > 0 && (
@@ -227,25 +207,7 @@ const TeacherProfileSection = ({ teacherData }) => {
         </View>
       )}
 
-      {/* Quick Actions */}
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => navigation.navigate('MyCourses')}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons name="book-open" size={20} color={theme.colors.white} />
-          <Text style={styles.actionButtonText}>Manage Courses</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => navigation.navigate('TeacherStudents')}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons name="account-group" size={20} color={theme.colors.white} />
-          <Text style={styles.actionButtonText}>View Students</Text>
-        </TouchableOpacity>
-      </View>
+    
     </ScrollView>
   );
 };

@@ -184,14 +184,7 @@ const LoginScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Test Accounts Info (Remove in production) */}
-        <View style={styles.testAccountsContainer}>
-          <Text style={styles.testAccountsTitle}>Test Accounts:</Text>
-          <Text style={styles.testAccountText}>Student: student@test.com</Text>
-          <Text style={styles.testAccountText}>Teacher: teacher@test.com</Text>
-          <Text style={styles.testAccountText}>Parent: parent@test.com</Text>
-          <Text style={styles.testAccountText}>Password: Test123!</Text>
-        </View>
+  
       </ScrollView>
     </KeyboardAvoidingView>
   );
